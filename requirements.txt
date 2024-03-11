@@ -4,3 +4,6 @@ python-dotenv
 black
 flake8
 isort
+typer[all]
+python-binance
+lightweight-charts
