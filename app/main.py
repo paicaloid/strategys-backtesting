@@ -1,25 +1,17 @@
+import glob
 from pathlib import Path
 
 import pandas as pd
-from lightweight_charts import Chart
-
-
-def read_csv(path: str) -> pd.DataFrame:
-    file_path = Path(path)
-    if not file_path.exists():
-        raise FileNotFoundError(f"File {file_path} does not exist")
-    df = pd.read_csv(file_path, index_col=0)
-    df.drop(columns=["close_time", "ignore"], inplace=True)
-    df.index = pd.to_datetime(df.index, unit="ms")
-
-    return df
-
 
 if __name__ == "__main__":
-    chart = Chart()
+    file_list = glob.glob("temp/OPUSDT/*.csv")
+    file_list = sorted(file_list)
 
-    df = read_csv("temp/OPUSDT/OPUSDT-5m-2023-02.csv")
-    # print(df)
-    chart.set(df)
+    base_df = pd.read_csv(file_list[0], index_col=0)
 
-    chart.show(block=True)
+    for file in file_list[1:]:
+        df = pd.read_csv(file, index_col=0)
+        base_df = pd.concat([base_df, df], axis=0)
+
+    base_df.sort_index(inplace=True)
+    base_df.to_csv("temp/OPUSDT/OPUSDT-5m.csv")
