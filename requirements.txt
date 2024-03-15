@@ -7,3 +7,4 @@ isort
 typer[all]
 python-binance
 lightweight-charts
+pandas-ta
