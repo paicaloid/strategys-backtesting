@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import vectorbtpro as vbt
 from indicators import ADX, ema_pair, stoch_rsi
@@ -46,7 +47,7 @@ def generate_signals(df: pd.DataFrame, adx_level: int, adx_diff: float) -> pd.Da
 
 
 def backtest(df: pd.DataFrame) -> pd.DataFrame:
-    df = df["2023-12-01 02:00:00":"2023-12-04"]
+    df = df["2023-12-01":]
     # long_entries, long_exits = df["long_entries"].vbt.signals.clean(df["long_exits"])
     # short_entries, short_exits = df["short_entries"].vbt.signals.clean(
     #     df["short_exits"]
@@ -62,11 +63,31 @@ def backtest(df: pd.DataFrame) -> pd.DataFrame:
         init_cash=100,
         fees=0.04 / 100,
         sl_stop=0.03,
-        tp_stop=0.06,
+        tp_stop=0.1,
         tsl_th=0.02,
         tsl_stop=0.01,
     )
     print(pf.stats())
+
+
+@vbt.parameterized(merge_func="concat")
+def tunning(df: pd.DataFrame, tsl_th: float, tsl_stop: float):
+    long_entries, long_exits = df["long_entries"], df["long_exits"]
+    short_entries, short_exits = df["short_entries"], df["short_exits"]
+    pf = vbt.Portfolio.from_signals(
+        close=df["close"],
+        long_entries=long_entries,
+        long_exits=long_exits,
+        short_entries=short_entries,
+        short_exits=short_exits,
+        init_cash=100,
+        fees=0.04 / 100,
+        sl_stop=0.03,
+        tp_stop=0.1,
+        tsl_th=tsl_th,
+        tsl_stop=tsl_stop,
+    )
+    return pf.sharpe_ratio, pf.total_return, pf.sortino_ratio
 
 
 def main():
@@ -81,7 +102,10 @@ def main():
     df_signals = generate_signals(df=df, adx_level=20, adx_diff=1)
 
     df = pd.concat([df, df_signals], axis=1)
-    backtest(df=df)
+    # backtest(df=df)
+    perf = tunning(df=df, tsl_th=vbt.Param(np.arange(0.02, 0.1, 0.01)), tsl_stop=0.01)
+    print(perf)
+    # print(perf.sort_values(ascending=False))
 
 
 if __name__ == "__main__":
